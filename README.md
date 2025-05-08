@@ -2,6 +2,8 @@
 
 An AI-powered code explanation system using Retrieval-Augmented Generation (RAG) and open-source LLMs. This project provides API, web, and CLI interfaces for easy code understanding, leveraging local models and web search for context.
 
+**Repository:** [https://github.com/yagna-1/code-explainer](https://github.com/yagna-1/code-explainer)
+
 ---
 
 ## Features
@@ -18,7 +20,7 @@ An AI-powered code explanation system using Retrieval-Augmented Generation (RAG)
 ## Architecture Overview
 
 - **Code Explainer API**: Python FastAPI app (see `code_explain.py`)
-- **Local LLM Server**: `llama.cpp` container serving GGUF models
+- **Local LLM Server**: `llama.cpp` container serving GGUF models (model used: `phi-2-dpo.Q4_K_M.gguf`)
 - **Web Search**: SearxNG container for open web queries
 - **Vector Store**: ChromaDB via `sentence-transformers` for code similarity search
 
@@ -36,10 +38,10 @@ All services can be run together using Docker Compose.
 ### Quick Start (Docker Compose)
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/yagna-1/code-explainer.git
 cd code-explainer
 
-# Download a GGUF model (see "Models" below) into ./models/
+# Download the phi-2-dpo.Q4_K_M.gguf model into ./models/
 # e.g. wget -O models/phi-2-dpo.Q4_K_M.gguf <your-model-url>
 
 docker-compose up --build -d
@@ -65,11 +67,9 @@ python code_explain.py --server
 
 ## Model Setup
 
-You **must download a GGUF LLM model** (not included in this repo due to size). Place it in `models/`:
+You **must download the GGUF LLM model** (not included in this repo due to size). Place it in `models/`:
 
-- [CodeLlama-7B-GGUF](https://huggingface.co/TheBloke/CodeLlama-7B-GGUF)
-- [StarCoder2-7B-GGUF](https://huggingface.co/TheBloke/starcoder2-7b-GGUF)
-- [WizardCoder-Python-7B-GGUF](https://huggingface.co/TheBloke/WizardCoder-Python-7B-GGUF)
+- [phi-2-dpo.Q4_K_M.gguf](https://huggingface.co/TheBloke/phi-2-dpo-GGUF) (used by default in this project)
 
 Update `docker-compose.yml` if you use a different filename.
 
