@@ -1,155 +1,163 @@
 # Code Explainer
 
-An AI-powered code explanation system using Retrieval-Augmented Generation (RAG) with open-source LLMs.
+An AI-powered code explanation system using Retrieval-Augmented Generation (RAG) and open-source LLMs. This project provides API, web, and CLI interfaces for easy code understanding, leveraging local models and web search for context.
 
-## Overview
+---
 
-Code Explainer is an agentic system that leverages state-of-the-art language models and retrieval techniques to provide high-quality explanations for code snippets. The system consists of several key components:
+## Features
 
-1. **Code-Specialized LLM**: Uses models like CodeLlama, StarCoder, or WizardCoder for generating explanations
-2. **Embedding Model**: SentenceTransformers for vectorizing code and finding similar examples
-3. **Vector Database**: ChromaDB for efficient storage and retrieval of code snippets
-4. **Web Search**: SearxNG integration for finding context when the local database is insufficient
-5. **API & Frontend**: FastAPI and a simple HTML/JS interface for easy interaction
+- **Explain code snippets** using an LLM, optionally with context from similar code and web search.
+- **Suggest improvements** to code only when relevant.
+- **Conversational chat**: Handles follow-up questions naturally, including general or social interactions.
+- **Retrieval-Augmented Generation**: Combines local codebase and web resources (via SearxNG) for enhanced explanations.
+- **FastAPI web server** with a simple frontend.
+- **CLI and REST API** for automation and integration.
 
-## Architecture
+---
 
-The system follows a hybrid retrieval workflow:
-1. Vectorize input code and find similar examples in the vector database
-2. If insufficient context is found, search the web via SearxNG
-3. Rerank combined results using a cross-encoder
-4. Use the retrieved context to enhance the LLM's code explanation
+## Architecture Overview
 
-## Installation
+- **Code Explainer API**: Python FastAPI app (see `code_explain.py`)
+- **Local LLM Server**: `llama.cpp` container serving GGUF models
+- **Web Search**: SearxNG container for open web queries
+- **Vector Store**: ChromaDB via `sentence-transformers` for code similarity search
 
-### Using Docker (Recommended)
+All services can be run together using Docker Compose.
 
-The easiest way to get started is using Docker Compose:
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Docker & Docker Compose (recommended)
+- (For manual use) Python 3.9+ and pip
+
+### Quick Start (Docker Compose)
 
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd code-explainer
 
-# Start the services
-docker-compose up -d
+# Download a GGUF model (see "Models" below) into ./models/
+# e.g. wget -O models/phi-2-dpo.Q4_K_M.gguf <your-model-url>
+
+docker-compose up --build -d
 ```
 
-This will start:
-- Code Explainer API server
-- Local LLM server (llama.cpp) for inference
-- SearxNG for web search capabilities
+This launches:
+- The Code Explainer API (`localhost:8000`)
+- The LLM server (`localhost:8080`)
+- SearxNG for web search (`localhost:8888`)
 
 ### Manual Setup
 
-If you prefer a manual setup:
-
 ```bash
-# Create a virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
 
-# Run the server
+# Start the server:
 python code_explain.py --server
 ```
 
-## Model Requirements
+---
 
-To use the system with local LLM inference, download one of these models:
-- [CodeLlama-7B-GGUF](https://huggingface.co/TheBloke/CodeLlama-7B-GGUF) (recommended)
+## Model Setup
+
+You **must download a GGUF LLM model** (not included in this repo due to size). Place it in `models/`:
+
+- [CodeLlama-7B-GGUF](https://huggingface.co/TheBloke/CodeLlama-7B-GGUF)
 - [StarCoder2-7B-GGUF](https://huggingface.co/TheBloke/starcoder2-7b-GGUF)
 - [WizardCoder-Python-7B-GGUF](https://huggingface.co/TheBloke/WizardCoder-Python-7B-GGUF)
 
-Place the model file in the `models/` directory and update the docker-compose.yml file if the filename differs.
+Update `docker-compose.yml` if you use a different filename.
+
+---
 
 ## Usage
 
-### Web Interface
+### Web UI
 
-Once the server is running, open a browser and navigate to:
-```
-http://localhost:8000/
-```
+Go to [http://localhost:8000/](http://localhost:8000/) in your browser.
 
 ### API
 
-The system exposes a REST API endpoint:
+**POST `/explain`**
 
 ```bash
 curl -X POST "http://localhost:8000/explain" \
   -H "Content-Type: application/json" \
-  -d '{"code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)", "context": "This is a recursive function."}'
+  -d '{"code": "def hello():\n    print(\"Hello, world!\")"}'
 ```
+
+**POST `/agent_explain`**  
+For agentic, step-by-step explanations (with reasoning trace).
 
 ### CLI
 
-The tool can also be used from the command line:
-
 ```bash
-# Explain code from a file
-python code_explain.py -f your_code_file.py
-
-# Directly explain code snippet
-python code_explain.py -c "def hello():\n    print('Hello, world!')"
+python code_explain.py -f myscript.py
+python code_explain.py -c "def add(a, b): return a + b"
 ```
+
+---
 
 ## Customization
 
 ### Environment Variables
 
-The system can be customized using environment variables:
+- `EMBEDDING_MODEL`: SentenceTransformer model for embeddings
+- `LLM_API_URL`: LLM server endpoint (default: http://llm-server:8080/v1)
+- `SEARCH_URL`: SearxNG endpoint (default: http://searxng:8080)
+- `LLM_TEMPERATURE`: LLM temperature (0.0-1.0)
 
-- `EMBEDDING_MODEL`: SentenceTransformer model to use for embeddings
-- `LLM_API_URL`: Endpoint for the LLM API
-- `SEARCH_URL`: SearxNG instance URL
-- `LLM_TEMPERATURE`: Temperature setting for text generation (0.0-1.0)
-
-### Adding to Knowledge Base
-
-To improve the system with your own code examples:
+### Add Your Own Examples
 
 ```python
 from code_explain import CodeExplainer
 
 explainer = CodeExplainer()
-code_examples = [
-    "def example1(): ...",
-    "class Example2: ..."
-]
-metadata = [
-    {"language": "python", "topic": "functions"},
-    {"language": "python", "topic": "classes"}
-]
-explainer.add_to_knowledge_base(code_examples, metadata)
+explainer.add_to_knowledge_base(
+    ["def foo(): pass", "class Bar: pass"],
+    [{"language": "python", "topic": "functions"}, {"language": "python", "topic": "classes"}]
+)
 ```
+
+---
 
 ## Project Structure
 
 ```
 code_explain/
-├── code_explain.py        # Main application code
-├── docker-compose.yml     # Docker services configuration  
-├── Dockerfile             # Container definition
-├── requirements.txt       # Python dependencies
-├── static/                # Frontend files
-│   └── index.html         # Web interface
-├── data/                  # Data storage (created at runtime)
-│   └── ...
-└── models/                # LLM model storage
-    └── ...
+├── code_explain.py           # Main FastAPI app, retrieval, agent, and CLI
+├── docker-compose.yml        # Multi-service orchestration
+├── Dockerfile                # API server container
+├── requirements.txt          # Python dependencies
+├── static/                   # Web frontend (index.html)
+├── searxng/                  # SearxNG config
+├── data/                     # ChromaDB and runtime data
+└── models/                   # LLM models (not included)
 ```
+
+---
+
+## Notes
+
+- **Model files are not in this repo** (see `.gitignore`). Download them manually.
+- **No large files should be committed**; see `.gitignore` for exclusions.
+
+---
 
 ## License
 
-This project is available under the MIT License.
+MIT License
+
+---
 
 ## Acknowledgments
 
-This system integrates several open-source projects:
-- [Code Llama](https://github.com/facebookresearch/codellama)
+- [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - [SentenceTransformers](https://www.sbert.net/)
 - [ChromaDB](https://github.com/chroma-core/chroma)
 - [SearxNG](https://github.com/searxng/searxng)
