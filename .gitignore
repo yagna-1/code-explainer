@@ -1,0 +1,36 @@
+# Ignore Large Language Models
+models/*
+!models/.gitkeep # If you want to keep the directory structure, add an empty .gitkeep file inside models/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.so
+*.coverage
+*.pytest_cache/
+.env
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Data directory (if it contains runtime generated data like ChromaDB files)
+data/*
+!data/.gitkeep # If you want to keep the directory structure
+
+# SearxNG potentially generated files (if any beyond settings)
+# Add specific patterns if needed, e.g.
+# searxng/*.db
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.swp
+*~

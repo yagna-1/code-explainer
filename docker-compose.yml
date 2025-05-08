@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  # Code Explainer API (pulled from Docker Hub / GHCR)
+  code-explainer:
+    image: your-dockerhub-username/code-explainer:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - LLM_API_URL=http://llm-server:8080/v1
+      - SEARCH_URL=http://searxng:8080
+    depends_on:
+      - llm-server
+      - searxng
+    restart: unless-stopped
+
+  # Local LLM server using llama.cpp (unchanged)
+  llm-server:
+    image: ghcr.io/ggerganov/llama.cpp:full
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/models
+    command: >
+      --server --host 0.0.0.0 --port 8080
+      --model /models/phi-2-dpo.Q4_K_M.gguf
+      --ctx-size 4096 --threads 4
+    restart: unless-stopped
+
+  # SearxNG for web search (unchanged)
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8888:8080"
+    environment:
+      - INSTANCE_NAME=CodeExplainerSearch
+    volumes:
+      - ./searxng:/etc/searxng
+    restart: unless-stopped
+
+volumes:
+  data:
+  models:
+  searxng:
